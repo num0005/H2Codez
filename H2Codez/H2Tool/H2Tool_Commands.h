@@ -72,6 +72,7 @@ public:
 	void unlock_other_scenario_types_compiling();
 	void enable_campaign_tags_sharing();
 	void apply_shared_tag_removal_scheme();
+	void unlock_ref_limit();
 
 
 private:

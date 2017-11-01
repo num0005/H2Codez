@@ -265,6 +265,14 @@ void H2Tool_Extras::unlock_other_scenario_types_compiling()
 	WriteBytesASM((DWORD)BUILD_CACHE_FILE_FOR_SCENARIO__CHECK_SCENARIO_TYPE, patch, 1);//change jz to jmp
 
 }
+
+void H2Tool_Extras::unlock_ref_limit()
+{
+	BYTE patch[] = { 0xB0, 0x01, 0xC3 }; // mov al, 1; ret
+	WriteBytesASM(0x5A2D20, patch, sizeof(patch));
+
+}
+
 static void _cdecl _build_cache_file_for_scenario__intercept_get_scenario_type()
 {
 	//Refer to H2EK_OpenSauce Campaign_sharing
@@ -347,8 +355,7 @@ void H2Tool_Extras::Initialize()
 	this->unlock_other_scenario_types_compiling();
 	//this->enable_campaign_tags_sharing(); //Crashes H2tool ,maybe we need to update BIN files for Campaign Sharing
 	this->apply_shared_tag_removal_scheme();
-	
-
+	unlock_ref_limit();
 }
 
 
