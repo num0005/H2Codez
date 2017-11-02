@@ -52,6 +52,16 @@ bool H2CommonPatches::newInstance()
 	return true;
 }
 
+void H2CommonPatches::SendExitNotice()
+{
+	char msg[] = "cya!";
+	LPTSTR lpszPipename1 = TEXT("\\\\.\\pipe\\h2tool_status");
+	HANDLE hPipe1 = CreateFile(lpszPipename1, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	DWORD cbWritten;
+	WriteFile(hPipe1, msg, strlen(msg), &cbWritten, NULL);
+	CloseHandle(hPipe1);
+}
+
 void H2CommonPatches::Init()
 {
 	DetourTransactionBegin();

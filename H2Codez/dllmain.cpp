@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "SigScanning.h"
+#include "H2ToolsCommon.h"
 
 #pragma region declarations
 
@@ -98,6 +99,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	    break;
 	
 	case DLL_PROCESS_DETACH:
+		H2CommonPatches::SendExitNotice();
 		std::string cmd = GetCommandLineA();
 		if (cmd.find("pause_after_run") != string::npos)
 			std::cin.get();
