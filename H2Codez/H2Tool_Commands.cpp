@@ -250,7 +250,7 @@ void H2Tool_Extras::apply_shared_tag_removal_scheme()
 		CAST_PTR(BYTE *,0x58908E),//_language_packing
 		CAST_PTR(BYTE *,0x5890A7),//_build_cache_file_add_language_packs
 		CAST_PTR(BYTE *,0x589105),//_build_cache_file_add_bitmap_pixels
-		CAST_PTR(BYTE *,0x589181),//_build_cache_file_add_tags
+		//CAST_PTR(BYTE *,0x589181),//_build_cache_file_add_tags
 	};
 
 	BYTE patch[1] = { 0x0 };
