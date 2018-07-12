@@ -1,6 +1,7 @@
 version: 2.0.{build}
 image: Visual Studio 2017
 configuration: Release
+skip_tags: true
 environment:
   deploy_token:
     secure: WGPN509P83WUoyHa9LJ+yXqS4zm8Ql1mOg9pzl3eUzg0JWEO+pjL1hJEHgclkUPR
@@ -10,6 +11,16 @@ deploy:
     secure: KEk0FetjPrWziRGWRW7YwQ==
   on:
     branch: H2OS_EK
+- provider: FTP
+  host: ftp.dlptest.com
+  protocol: ftp
+  username: dlpuser@dlptest.com
+  password:
+    secure: YMFg0qsprFpw24EX2gPxvQ==
+  folder: Tools\PC\H2codez\$(appveyor-build-version)
+  active_mode: true
+  beta: false
+  debug: false
 before_build:
 - cmd: 'echo #define version ^"%APPVEYOR_BUILD_VERSION%-%APPVEYOR_REPO_COMMIT:~0,7%^" 1>  H2Codez\Version.h'
 - cmd: 'cat H2Codez\Version.h'
