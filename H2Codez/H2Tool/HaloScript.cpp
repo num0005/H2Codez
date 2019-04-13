@@ -1,6 +1,9 @@
 #include "H2Tool_Commands.h"
 #include "Common\H2EKCommon.h"
+#include "Common\TagInterface.h"
 #include "Tags\ScenarioTag.h"
+#include "Tags\Globals.h"
+#include "Tags\HudGlobals.h"
 #include "H2ToolLibrary.inl"
 
 /*
@@ -218,6 +221,32 @@ static char __cdecl hs_convert_point_ref(unsigned __int16 script_node_index)
 		hs_converter_error(script_node, "Invalid format.");
 		return false;
 	}
+}
+
+static char __cdecl hs_convert_navpoint(unsigned __int16 script_node_index)
+{
+	hs_script_node *script_node = hs_get_script_node(script_node_index);
+	auto globals = tags::load_tag('matg', "globals/globals", 4);
+	if (!LOG_CHECK(globals.is_valid()))
+	{
+		hs_converter_error(script_node, "WTF globals are missing...");
+		return false;
+	}
+	auto globals_data = tags::get_tag<globals_block>('matg', globals);
+	assert(globals_data);
+
+	auto interface_info = globals_data->interfaceTags[0];
+	if (!interface_info || !interface_info->hudGlobals.tag_index.is_valid())
+	{
+		hs_converter_error(script_node, "\"Interface Tags\" is missing from globals or doesn't link to hub globals.");
+		return false;
+	}
+
+	auto hub_globals = tags::get_tag<hud_globals_block>('hudg', interface_info->hudGlobals.tag_index);
+	assert(hub_globals);
+
+	auto &way_points = hub_globals->newGlobals.waypoints;
+	way_points.find_string_element()
 }
 
 #define set_hs_converter(type, func) \
