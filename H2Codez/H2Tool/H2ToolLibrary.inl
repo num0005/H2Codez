@@ -99,3 +99,18 @@ static inline tags::s_scoped_handle load_tag_no_processing(blam_tag type, const 
 		std::cout << "failed to load tag: " << name << std::endl;
 	return tag;
 }
+
+static bool tool_build_structure_from_jms_proc(_In_ wcstring* args)
+{
+	typedef bool(_cdecl* _tool_build_structure_from_jms_proc)(_In_ wcstring*);
+	static _tool_build_structure_from_jms_proc tool_build_structure_from_jms_proc_ = CAST_PTR(_tool_build_structure_from_jms_proc, 0x420220);
+	return tool_build_structure_from_jms_proc_(args);
+
+}
+static bool tool_build_structure_from_ass_proc(_In_ wcstring* args)
+{
+	typedef bool(_cdecl* _tool_build_structure_from_ass_proc)(_In_ wcstring*);
+	static _tool_build_structure_from_ass_proc tool_build_structure_from_ass_proc_ = CAST_PTR(_tool_build_structure_from_ass_proc, 0x4201E0);
+	return tool_build_structure_from_ass_proc_(args);
+
+}

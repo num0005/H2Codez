@@ -1,6 +1,7 @@
 #include "ToolCommandDefinitions.inl"
 #include "H2Tool_extra_commands.inl"
 #include "CustomLightmaps.h"
+#include "LuaCommand.h"
 #include "Tags\ScenarioTag.h"
 #include "Tags\Bitmap.h"
 #include "Common\H2EKCommon.h"
@@ -50,7 +51,10 @@ static const s_tool_command* h2tool_extra_commands[] = {
 	&lightmap_dump,
 	&edit_bitmap,
 	&structure_dump,
-	&lightmap_uv_import
+	&lightmap_uv_import,
+	#ifdef _DEBUG
+	&lua_script_command
+	#endif
 };
 
 int __cdecl s_tool_command_compare(void *, const void* lhs, const void* rhs)

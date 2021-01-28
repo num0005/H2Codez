@@ -61,6 +61,9 @@
     <Filter Include="Source Files\COLLADA">
       <UniqueIdentifier>{0249c020-812e-44da-bbb4-4edfee26e76a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Lua">
+      <UniqueIdentifier>{a960cc7d-1915-409a-b929-f8e2aa3af130}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="H2Tool\H2Tool_extra_commands.inl">
@@ -359,6 +362,18 @@
     <ClInclude Include="H2Sapien\PlayerControl.h">
       <Filter>Source Files\Patches\H2Sapien</Filter>
     </ClInclude>
+    <ClInclude Include="Lua\API.h">
+      <Filter>Source Files\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="H2Tool\CMDHelpers.h">
+      <Filter>Source Files\Patches\H2Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="Lua\TagAPI.h">
+      <Filter>Source Files\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="H2Tool\LuaCommand.h">
+      <Filter>Source Files\Patches\H2Tool</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -492,6 +507,12 @@
     </ClCompile>
     <ClCompile Include="H2Sapien\PlayerControl.cpp">
       <Filter>Source Files\Patches\H2Sapien</Filter>
+    </ClCompile>
+    <ClCompile Include="Lua\API.cpp">
+      <Filter>Source Files\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="H2Tool\LuaCommand.cpp">
+      <Filter>Source Files\Patches\H2Tool</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

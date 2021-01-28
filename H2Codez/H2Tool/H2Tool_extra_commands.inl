@@ -3,6 +3,7 @@
 #include "Bitmap.inl"
 #include "H2ToolLibrary.inl"
 #include "LightMapping.h"
+#include "CMDHelpers.h"
 #include "Common/RenderGeometryDumper.h"
 #include "Common/FiloInterface.h"
 #include "Common/TagInterface.h"
@@ -28,83 +29,6 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#pragma region util
-
-/*
-	Show a CMD prompt to the user
-	Returns user response or default
-*/
-inline static bool prompt_user(const std::string& message, bool default = false)
-{
-	std::cout << message << " (Y/N) [Default:" << (default ? "Y" : "N") << "]" << std::endl;
-	
-	std::string input;
-	std::cin >> input;
-	str_trim(input);
-	input = tolower(input);
-	if (input.size() >= 1)
-	{
-		if (input[0] == 'y')
-		{
-			return true;
-		}
-		else if (input[0] == 'n')
-		{
-			return false;
-		}
-	}
-	return default;
-}
-
-/*
-	Show a CMD prompt to the user waiting till user gives valid response
-	Returns user response
-*/
-inline static bool prompt_user_wait(const std::string& message)
-{
-	std::cout << message << " (Y/N)" << std::endl;
-	while (std::cin)
-	{
-		std::string input;
-		std::cin >> input;
-		str_trim(input);
-		input = tolower(input);
-		if (input.size() >= 1)
-		{
-			if (input[0] == 'y')
-			{
-				return true;
-			}
-			else if (input[0] == 'n')
-			{
-				return false;
-			}
-		}
-	}
-	abort(); // unreachable
-}
-
-/*
-	Convert file-system path to tag path + type
-*/
-static std::string filesystem_path_to_tag_path(const wchar_t *fs_path, blam_tag *tag_type = nullptr)
-{
-	std::string path = tolower(utf16_to_utf8(fs_path));
-	file_info info = get_file_path_info(path);
-
-	if (tag_type)
-	{
-		if (info.has_entension)
-			*tag_type = H2CommonPatches::string_to_tag_group(info.extension);
-		else
-			*tag_type = NONE;
-	}
-
-	return info.file_path;
-}
-
-#pragma endregion util
-
 #define extra_commands_count 0x43
 #define help_desc "Prints information about the command name passed to it"
 #define list_all_desc "lists all extra commands"
@@ -124,20 +48,7 @@ static const s_tool_command_argument tool_build_structure_from_jms_arguments[] =
 	"Name of Structure BSP",
 	}
 };
-bool _cdecl tool_build_structure_from_jms_proc(wcstring* args)
-{
-	typedef bool(_cdecl* _tool_build_structure_from_jms_proc)(wcstring*);
-	static _tool_build_structure_from_jms_proc tool_build_structure_from_jms_proc_ = CAST_PTR(_tool_build_structure_from_jms_proc, 0x420220);
-	return tool_build_structure_from_jms_proc_(args);
 
-}
-bool _cdecl tool_build_structure_from_ass_proc(wcstring* args)
-{
-	typedef bool(_cdecl* _tool_build_structure_from_ass_proc)(wcstring*);
-	static _tool_build_structure_from_ass_proc tool_build_structure_from_ass_proc_ = CAST_PTR(_tool_build_structure_from_ass_proc, 0x4201E0);
-	return tool_build_structure_from_ass_proc_(args);
-
-}
 static const s_tool_command tool_build_structure_from_jms = {
 	L"structure new from jms",
 	CAST_PTR(_tool_command_proc, tool_build_structure_from_jms_proc),
@@ -765,129 +676,7 @@ static const s_tool_command pathfinding_from_coll
 };
 
 #pragma endregion
-#pragma region lightmap
-const s_tool_command_argument lightmap_slave_args[] =
-{
-	{ _tool_command_argument_type_tag_name, L"scenario", "*.scenario" },
-	{ _tool_command_argument_type_string, L"bsp name" },
-	{ _tool_command_argument_type_radio, L"quality setting", "checkerboard|draft_low|draft_medium|draft_high|draft_super|direct_only|low|medium|high|super" },
-	{ _tool_command_argument_type_0, L"slave count" },
-	{ _tool_command_argument_type_0, L"slave index" }
-};
 
-const s_tool_command_argument lightmap_master_args[] =
-{
-	{ _tool_command_argument_type_tag_name, L"scenario", "*.scenario" },
-	{ _tool_command_argument_type_string, L"bsp name" },
-	{ _tool_command_argument_type_radio, L"quality setting", "checkerboard|draft_low|draft_medium|draft_high|draft_super|direct_only|low|medium|high|super" },
-	{ _tool_command_argument_type_0, L"slave count" }
-};
-
-static const s_tool_command lightmaps_slave
-{
-	L"lightmaps slave",
-	generate_lightmaps_slave,
-	lightmap_slave_args,
-	ARRAYSIZE(lightmap_slave_args),
-	true
-};
-
-static const s_tool_command lightmaps_slave_fork
-{
-	L"lightmaps slave fork",
-	generate_lightmaps_fork_slave,
-	lightmap_master_args,
-	ARRAYSIZE(lightmap_master_args),
-	true
-};
-
-static const s_tool_command lightmaps_master
-{
-	L"lightmaps master",
-	generate_lightmaps_master,
-	lightmap_master_args,
-	ARRAYSIZE(lightmap_master_args),
-	true
-};
-
-static const s_tool_command lightmaps_local_mp
-{
-	L"lightmaps local multi process",
-	generate_lightmaps_local_multi_process,
-	lightmap_master_args,
-	ARRAYSIZE(lightmap_master_args),
-	true
-};
-
-void _cdecl fix_extracted_lightmaps(const wchar_t *argv[])
-{
-	std::string scnr_path = filesystem_path_to_tag_path(argv[0]);
-	printf_s("scnr :'%s'\n", scnr_path.c_str());
-
-	datum scenario = tags::load_tag('scnr', scnr_path.c_str(), 7);
-
-	if (!scenario.is_valid())
-	{
-		printf("Unable to load tag %s\n", scnr_path.c_str());
-		return;
-	}
-
-	auto scenario_data = tags::get_tag<scnr_tag>('scnr', scenario);
-	for (const auto &bsp_ref : scenario_data->structureBSPs)
-	{
-		printf(" == bsp: %s ==\n", bsp_ref.structureBSP.tag_name);
-		datum bsp_tag = tags::load_tag('sbsp', bsp_ref.structureBSP.tag_name, 7);
-		datum lightmap_tag = tags::load_tag('ltmp', bsp_ref.structureLightmap.tag_name, 7);
-
-		auto bsp = tags::get_tag<scenario_structure_bsp_block>('sbsp', bsp_tag);
-		auto lightmap = tags::get_tag<scenario_structure_lightmap_block>('ltmp', lightmap_tag);
-
-		if (LOG_CHECK(lightmap->lightmapGroups.size > 0))
-		{
-			auto *lightmap_group = lightmap->lightmapGroups[0];
-			printf("Copying cluster data...");
-			for (int32_t i = 0; i < lightmap_group->clusters.size; i++)
-			{
-				auto *lightmap_cluster = lightmap_group->clusters[i];
-				auto *bsp_cluster = bsp->clusters[i];
-				tags::block_delete_all(&lightmap_cluster->cacheData);
-				tags::copy_block(&bsp_cluster->clusterData, &lightmap_cluster->cacheData);
-			}
-			printf("done\n");
-
-			printf("Copying instance geo data...");
-			for (int32_t i = 0; i < lightmap_group->poopDefinitions.size; i++)
-			{
-				auto *instance_geo_lightmap = lightmap_group->poopDefinitions[i];
-				auto *bsp_instance_geo = bsp->instancedGeometriesDefinitions[i];
-				tags::block_delete_all(&instance_geo_lightmap->cacheData);
-				tags::copy_block(&bsp_instance_geo->renderInfo.renderData, &instance_geo_lightmap->cacheData);
-			}
-			printf("done\n");
-			
-		}
-		tags::save_tag(lightmap_tag);
-		tags::unload_tag(bsp_tag);
-		tags::unload_tag(lightmap_tag);
-	}
-
-	printf("=== Stage 1 complete ===\n");
-}
-
-const s_tool_command_argument lightmaps_fix_args[] =
-{
-	{ _tool_command_argument_type_tag_name, L"scenario", "*.scenario" }
-};
-
-static const s_tool_command fix_extraced_lightmap
-{
-	L"fix extracted lightmaps",
-	fix_extracted_lightmaps,
-	lightmaps_fix_args,
-	ARRAYSIZE(lightmaps_fix_args),
-	true
-};
-#pragma endregion
 static void _cdecl dump_tag_as_xml_proc(const wchar_t *argv[])
 {
 	blam_tag tag_type;
@@ -1093,4 +882,3 @@ static const s_tool_command structure_dump
 	ARRAYSIZE(structure_2_dae),
 	false
 };
-

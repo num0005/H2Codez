@@ -1,5 +1,6 @@
 #pragma once
 #include "h2codez.h"
+#include "H2Tool.h"
 
 struct lightmap_quality_setting
 {
@@ -15,13 +16,16 @@ struct lightmap_quality_setting
 CHECK_STRUCT_SIZE(lightmap_quality_setting, 0x20);
 
 // allows distributing lightmapping over multiple computers
-void _cdecl generate_lightmaps_slave(const wchar_t *argv[]);
+extern const s_tool_command lightmaps_slave;
 
 // starts slave and forks once we get to rasterizing
-void _cdecl generate_lightmaps_fork_slave(const wchar_t *argv[]);
+extern const s_tool_command lightmaps_slave_fork;
 
 // merges together the distributed lightmap
-void _cdecl generate_lightmaps_master(const wchar_t *argv[]);
+extern const s_tool_command lightmaps_master;
 
 // runs multiple lighermappers and then merges the resulting data
-void _cdecl generate_lightmaps_local_multi_process(const wchar_t *argv[]);
+extern const s_tool_command lightmaps_local_mp;
+
+// Fix lightmaps extracted using the tag extractor
+extern const s_tool_command fix_extraced_lightmap;

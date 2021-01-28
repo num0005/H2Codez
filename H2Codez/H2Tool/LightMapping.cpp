@@ -2,6 +2,10 @@
 #include "H2Tool.h"
 #include "Common/TagInterface.h"
 #include "Common/DiscordInterface.h"
+#include "Tags/ScenarioTag.h"
+#include "Tags/ScenarioStructureBSP.h"
+#include "Tags/ScenarioStructureLightmap.h"
+#include "util/FileSystem.h"
 #include "util/Patches.h"
 #include "util/Numerical.h"
 #include "util/Process.h"
@@ -103,25 +107,6 @@ static bool set_slave_count(const wchar_t *count)
 	}
 }
 
-void __cdecl generate_lightmaps_slave(const wchar_t *argv[])
-{
-	lightmap_settings_init(true);
-	process_lightmap_quality_settings(argv[2]);
-	if (!LOG_CHECK(set_slave_count(argv[3])))
-	{
-		printf("Invalid instance count\n");
-		return;
-	}
-	size_t slave_id = std::stoul(argv[4], 0, numerical::get_base(utf16_to_utf8(argv[4])));
-	printf(" == Instance id: %d == \n", slave_id);
-	*slave_id_ptr = slave_id;
-
-	sprintf_s(lightmap_log_name, "lightmap_slave_%d.log", slave_id);
-
-	global_lightmap_control_distributed_type = slave;
-
-	do_light_calculations(argv[0], argv[1]);
-}
 
 static void ASM_FUNC tool_exit()
 {
@@ -226,96 +211,6 @@ DWORD __cdecl TAG_SAVE_RADIANCE_FORK(int TAG_INDEX)
 	printf("%s\n", name.c_str());
 	tags::rename_tag(TAG_INDEX, name);
 	return tags::save_tag(TAG_INDEX);
-}
-
-void __cdecl generate_lightmaps_fork_slave(const wchar_t *argv[])
-{
-	PatchCall(0x4C7247, TAG_SAVE_RADIANCE_FORK); // fix name used when saving
-	patch_slave_id_access();
-
-	lightmap_settings_init(true);
-	process_lightmap_quality_settings(argv[2]);
-	if (!LOG_CHECK(set_slave_count(argv[3])))
-	{
-		printf("Invalid instance count\n");
-		return;
-	}
-	// set slave id to zero to make code work
-	*slave_id_ptr = 0;
-
-	sprintf_s(lightmap_log_name, "lightmap_slave_fork.log");
-
-	global_lightmap_control_distributed_type = slave;
-
-	do_light_calculations(argv[0], argv[1]);
-}
-
-void __cdecl generate_lightmaps_master(const wchar_t *argv[])
-{
-	lightmap_settings_init(true);
-	process_lightmap_quality_settings(argv[2]);
-	if (!LOG_CHECK(set_slave_count(argv[3])))
-	{
-		printf("Invalid slave count\n");
-		return;
-	}
-
-	global_lightmap_control_distributed_type = master;
-	sprintf_s(lightmap_log_name, "lightmap_master.log");
-
-	do_light_calculations(argv[0], argv[1]);
-}
-
-/*
-	Starts muiltiple lightmappers so you can't have to
-*/
-void _cdecl generate_lightmaps_local_multi_process(const wchar_t *argv[])
-{
-	auto start_time = std::chrono::high_resolution_clock::now();
-
-	size_t slave_count;
-	if (!LOG_CHECK(number_from_string(argv[3], slave_count)))
-	{
-		printf("Failed to get slave count\n");
-		return;
-	}
-	
-	// enforce some sanity checks in non-debug builds
-	if (!is_debug_build())
-	{
-		if (slave_count <= 1)
-		{
-			printf("At least two slave processes are required for multi process mode.\n");
-			return;
-		}
-	}
-
-	printf("== Starting %d farm processes ==\n", slave_count);
-
-	std::wstring common_command_line = L"lightmaps-slave \"" + std::wstring(argv[0]) +  L"\" " + argv[1] + L" " + argv[2] + L" " + argv[3];
-	HANDLE *child_handles = new HANDLE[slave_count];
-	for (size_t i = 0; i < slave_count; i++)
-	{
-		std::wstring command_line = common_command_line + L" " + std::to_wstring(i);
-		if (!process::newInstance(command_line, &child_handles[i]))
-		{
-			printf("Failed to start child process %d\n", i);
-			return;
-		}
-	}
-
-	printf(" == Waiting for child processes to exit ==\n");
-	WaitForMultipleObjects(slave_count, child_handles, TRUE, INFINITE);
-
-	printf("== Starting merge ==\n");
-	flushall(); // flush console output to prevent graphical bugs
-	Sleep(1000); // wait a bit
-	generate_lightmaps_master(argv);
-
-	auto end_time = std::chrono::high_resolution_clock::now();
-	auto time_taken = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-	std::string time_taken_human = beautify_duration(time_taken);
-	printf("== Time taken: %s ==", time_taken_human.c_str());
 }
 
 // hook lightmap tag save call to save monochrome bitmap and fix lightprobes crashing
@@ -424,3 +319,238 @@ void H2ToolPatches::reenable_lightmap_farming()
 	PatchCall(0x4C7256, save_lightmap_hook);
 	PatchCall(0x4C7587, save_scenario_hook);
 }
+
+void __cdecl generate_lightmaps_fork_slave(const wchar_t* argv[])
+{
+	PatchCall(0x4C7247, TAG_SAVE_RADIANCE_FORK); // fix name used when saving
+	patch_slave_id_access();
+
+	lightmap_settings_init(true);
+	process_lightmap_quality_settings(argv[2]);
+	if (!LOG_CHECK(set_slave_count(argv[3])))
+	{
+		printf("Invalid instance count\n");
+		return;
+	}
+	// set slave id to zero to make code work
+	*slave_id_ptr = 0;
+
+	sprintf_s(lightmap_log_name, "lightmap_slave_fork.log");
+
+	global_lightmap_control_distributed_type = slave;
+
+	do_light_calculations(argv[0], argv[1]);
+}
+
+void __cdecl generate_lightmaps_master(const wchar_t* argv[])
+{
+	lightmap_settings_init(true);
+	process_lightmap_quality_settings(argv[2]);
+	if (!LOG_CHECK(set_slave_count(argv[3])))
+	{
+		printf("Invalid slave count\n");
+		return;
+	}
+
+	global_lightmap_control_distributed_type = master;
+	sprintf_s(lightmap_log_name, "lightmap_master.log");
+
+	do_light_calculations(argv[0], argv[1]);
+}
+
+/*
+	Starts muiltiple lightmappers so you can't have to
+*/
+void _cdecl generate_lightmaps_local_multi_process(const wchar_t* argv[])
+{
+	auto start_time = std::chrono::high_resolution_clock::now();
+
+	size_t slave_count;
+	if (!LOG_CHECK(number_from_string(argv[3], slave_count)))
+	{
+		printf("Failed to get slave count\n");
+		return;
+	}
+
+	// enforce some sanity checks in non-debug builds
+	if (!is_debug_build())
+	{
+		if (slave_count <= 1)
+		{
+			printf("At least two slave processes are required for multi process mode.\n");
+			return;
+		}
+	}
+
+	printf("== Starting %d farm processes ==\n", slave_count);
+
+	std::wstring common_command_line = L"lightmaps-slave \"" + std::wstring(argv[0]) + L"\" " + argv[1] + L" " + argv[2] + L" " + argv[3];
+	HANDLE* child_handles = new HANDLE[slave_count];
+	for (size_t i = 0; i < slave_count; i++)
+	{
+		std::wstring command_line = common_command_line + L" " + std::to_wstring(i);
+		if (!process::newInstance(command_line, &child_handles[i]))
+		{
+			printf("Failed to start child process %d\n", i);
+			return;
+		}
+	}
+
+	printf(" == Waiting for child processes to exit ==\n");
+	WaitForMultipleObjects(slave_count, child_handles, TRUE, INFINITE);
+
+	printf("== Starting merge ==\n");
+	flushall(); // flush console output to prevent graphical bugs
+	Sleep(1000); // wait a bit
+	generate_lightmaps_master(argv);
+
+	auto end_time = std::chrono::high_resolution_clock::now();
+	auto time_taken = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+	std::string time_taken_human = beautify_duration(time_taken);
+	printf("== Time taken: %s ==", time_taken_human.c_str());
+}
+
+void __cdecl generate_lightmaps_slave(const wchar_t* argv[])
+{
+	lightmap_settings_init(true);
+	process_lightmap_quality_settings(argv[2]);
+	if (!LOG_CHECK(set_slave_count(argv[3])))
+	{
+		printf("Invalid instance count\n");
+		return;
+	}
+	size_t slave_id = std::stoul(argv[4], 0, numerical::get_base(utf16_to_utf8(argv[4])));
+	printf(" == Instance id: %d == \n", slave_id);
+	*slave_id_ptr = slave_id;
+
+	sprintf_s(lightmap_log_name, "lightmap_slave_%d.log", slave_id);
+
+	global_lightmap_control_distributed_type = slave;
+
+	do_light_calculations(argv[0], argv[1]);
+}
+
+void _cdecl fix_extracted_lightmaps(const wchar_t* argv[])
+{
+	std::string scnr_path = filesystem_path_to_tag_path(argv[0]);
+	printf_s("scnr :'%s'\n", scnr_path.c_str());
+
+	datum scenario = tags::load_tag('scnr', scnr_path.c_str(), 7);
+
+	if (!scenario.is_valid())
+	{
+		printf("Unable to load tag %s\n", scnr_path.c_str());
+		return;
+	}
+
+	auto scenario_data = tags::get_tag<scnr_tag>('scnr', scenario);
+	for (const auto& bsp_ref : scenario_data->structureBSPs)
+	{
+		printf(" == bsp: %s ==\n", bsp_ref.structureBSP.tag_name);
+		datum bsp_tag = tags::load_tag('sbsp', bsp_ref.structureBSP.tag_name, 7);
+		datum lightmap_tag = tags::load_tag('ltmp', bsp_ref.structureLightmap.tag_name, 7);
+
+		auto bsp = tags::get_tag<scenario_structure_bsp_block>('sbsp', bsp_tag);
+		auto lightmap = tags::get_tag<scenario_structure_lightmap_block>('ltmp', lightmap_tag);
+
+		if (LOG_CHECK(lightmap->lightmapGroups.size > 0))
+		{
+			auto* lightmap_group = lightmap->lightmapGroups[0];
+			printf("Copying cluster data...");
+			for (int32_t i = 0; i < lightmap_group->clusters.size; i++)
+			{
+				auto* lightmap_cluster = lightmap_group->clusters[i];
+				auto* bsp_cluster = bsp->clusters[i];
+				tags::block_delete_all(&lightmap_cluster->cacheData);
+				tags::copy_block(&bsp_cluster->clusterData, &lightmap_cluster->cacheData);
+			}
+			printf("done\n");
+
+			printf("Copying instance geo data...");
+			for (int32_t i = 0; i < lightmap_group->poopDefinitions.size; i++)
+			{
+				auto* instance_geo_lightmap = lightmap_group->poopDefinitions[i];
+				auto* bsp_instance_geo = bsp->instancedGeometriesDefinitions[i];
+				tags::block_delete_all(&instance_geo_lightmap->cacheData);
+				tags::copy_block(&bsp_instance_geo->renderInfo.renderData, &instance_geo_lightmap->cacheData);
+			}
+			printf("done\n");
+
+		}
+		tags::save_tag(lightmap_tag);
+		tags::unload_tag(bsp_tag);
+		tags::unload_tag(lightmap_tag);
+	}
+
+	printf("=== Stage 1 complete ===\n");
+}
+
+#pragma region lightmap commands
+const s_tool_command_argument lightmap_slave_args[] =
+{
+	{ _tool_command_argument_type_tag_name, L"scenario", "*.scenario" },
+	{ _tool_command_argument_type_string, L"bsp name" },
+	{ _tool_command_argument_type_radio, L"quality setting", "checkerboard|draft_low|draft_medium|draft_high|draft_super|direct_only|low|medium|high|super" },
+	{ _tool_command_argument_type_0, L"slave count" },
+	{ _tool_command_argument_type_0, L"slave index" }
+};
+
+const s_tool_command_argument lightmap_master_args[] =
+{
+	{ _tool_command_argument_type_tag_name, L"scenario", "*.scenario" },
+	{ _tool_command_argument_type_string, L"bsp name" },
+	{ _tool_command_argument_type_radio, L"quality setting", "checkerboard|draft_low|draft_medium|draft_high|draft_super|direct_only|low|medium|high|super" },
+	{ _tool_command_argument_type_0, L"slave count" }
+};
+
+const s_tool_command lightmaps_slave
+{
+	L"lightmaps slave",
+	generate_lightmaps_slave,
+	lightmap_slave_args,
+	ARRAYSIZE(lightmap_slave_args),
+	true
+};
+
+const s_tool_command lightmaps_slave_fork
+{
+	L"lightmaps slave fork",
+	generate_lightmaps_fork_slave,
+	lightmap_master_args,
+	ARRAYSIZE(lightmap_master_args),
+	true
+};
+
+const s_tool_command lightmaps_master
+{
+	L"lightmaps master",
+	generate_lightmaps_master,
+	lightmap_master_args,
+	ARRAYSIZE(lightmap_master_args),
+	true
+};
+
+const s_tool_command lightmaps_local_mp
+{
+	L"lightmaps local multi process",
+	generate_lightmaps_local_multi_process,
+	lightmap_master_args,
+	ARRAYSIZE(lightmap_master_args),
+	true
+};
+
+const s_tool_command_argument lightmaps_fix_args[] =
+{
+	{ _tool_command_argument_type_tag_name, L"scenario", "*.scenario" }
+};
+
+const s_tool_command fix_extraced_lightmap
+{
+	L"fix extracted lightmaps",
+	fix_extracted_lightmaps,
+	lightmaps_fix_args,
+	ARRAYSIZE(lightmaps_fix_args),
+	true
+};
+#pragma endregion
+

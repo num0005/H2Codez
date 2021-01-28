@@ -54,6 +54,57 @@ namespace tags
 	};
 	CHECK_STRUCT_SIZE(s_tag_ilterator, 0x18);
 
+	struct s_tag_field_ilterator
+	{
+		s_tag_field_ilterator(tag_field* fields, void* tag_data, int flag = 0) :
+			field_defintions(fields),
+			data(tag_data),
+			flags(flag)
+		{};
+
+		void disable_all_fields() {
+			memset(field_type_flags, 0, sizeof(field_type_flags));
+		}
+
+		void enable_all_fields() {
+			memset(field_type_flags, -1, sizeof(field_type_flags));
+		}
+
+		void enable_field_type(tag_field::field_type type) {
+			field_type_flags[type >> 5] |= (1 << (type & 31));
+		}
+
+		void disable_field_type(tag_field::field_type type) {
+			field_type_flags[type >> 5] &= ~(1 << (type & 31));
+		}
+
+		tag_field* field_defintions = nullptr;
+		void* data = nullptr;
+		int flags = 0;
+		int field_type_flags[2] = { };
+		int current_index = 0;
+		int current_field_size;
+		int next_field_offset = 0;
+		int field_offset_runtime = 0;
+		char is_done = 0;
+		char pad = 0;
+		__int16 stack_index = 0;
+		int stack[32] = {};
+		tag_field* current_field = nullptr;
+		void *current_field_data = nullptr;
+		int current_field_offset = 0;
+		int found_field = 0;
+
+		bool next() {
+			typedef char __cdecl next(s_tag_field_ilterator* iter);
+			auto next_impl = reinterpret_cast<next*>(SwitchAddessByMode(0x52DAD0, 0u, 0u));
+			CHECK_FUNCTION_SUPPORT(next_impl);
+			return next_impl(this);
+		}
+	};
+	CHECK_STRUCT_SIZE(s_tag_field_ilterator, 0xB8);
+
+
 	/* Get tag_def for tag_group */
 	tag_def *get_group_definition(int tag_group);
 

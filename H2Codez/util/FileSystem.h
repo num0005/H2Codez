@@ -2,6 +2,8 @@
 #include <string>
 #include <unordered_set>
 #include <filesystem>
+#include "Common/tag_group_names.h"
+
 namespace fs = std::filesystem;
 
 inline void find_all_files_with_extension(std::unordered_set<std::string> &files, const char* folder, const char* ext)
@@ -58,3 +60,24 @@ inline std::unordered_set<std::string> find_all_files_with_extension(const char*
 {
 	return find_all_files_with_extension(folder, ext.c_str());
 };
+
+
+/*
+	Convert file-system path to tag path + type
+*/
+static std::string filesystem_path_to_tag_path(const wchar_t* fs_path, blam_tag* tag_type = nullptr)
+{
+	std::string path = tolower(utf16_to_utf8(fs_path));
+	file_info info = get_file_path_info(path);
+
+	if (tag_type)
+	{
+		if (info.has_entension)
+			*tag_type = H2CommonPatches::string_to_tag_group(info.extension);
+		else
+			*tag_type = NONE;
+	}
+
+	return info.file_path;
+}
+
