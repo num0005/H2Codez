@@ -155,7 +155,7 @@ struct editor_string
 	{
 	}
 
-	bool is_string_id() noexcept
+	bool is_string_id() const noexcept
 	{
 		// assume it's a c-string if it's less than a hardcoded max id
 		return id <= max_string_id;
@@ -163,7 +163,7 @@ struct editor_string
 
 #pragma optimize( "", off )
 	// really nasty code, needed because of some invalid data in tag defs
-	bool is_string_ptr_valid(size_t &size_hack)
+	bool is_string_ptr_valid(size_t &size_hack) const
 	{
 		if (is_string_id())
 			return false;
@@ -180,13 +180,13 @@ struct editor_string
 #pragma optimize( "", on )
 
 	// is string not set or empty
-	bool is_empty() noexcept
+	bool is_empty() const noexcept
 	{
 		return id == empty_string_id || string == NULL;
 	}
 
 	// returns contents as C++ string
-	std::string get_string()
+	std::string get_string() const
 	{
 		if (is_empty())
 			return "";

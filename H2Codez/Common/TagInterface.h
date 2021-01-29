@@ -54,9 +54,13 @@ namespace tags
 	};
 	CHECK_STRUCT_SIZE(s_tag_ilterator, 0x18);
 
-	struct s_tag_field_ilterator
+	struct s_tag_field_iterator
 	{
-		s_tag_field_ilterator(tag_field* fields, void* tag_data, int flag = 0) :
+		enum flags : int {
+			none = 0,
+			include_struct = 1,
+		};
+		s_tag_field_iterator(const tag_field* fields, void* tag_data, flags flag = flags::none) :
 			field_defintions(fields),
 			data(tag_data),
 			flags(flag)
@@ -78,7 +82,7 @@ namespace tags
 			field_type_flags[type >> 5] &= ~(1 << (type & 31));
 		}
 
-		tag_field* field_defintions = nullptr;
+		const tag_field* field_defintions = nullptr;
 		void* data = nullptr;
 		int flags = 0;
 		int field_type_flags[2] = { };
@@ -96,13 +100,13 @@ namespace tags
 		int found_field = 0;
 
 		bool next() {
-			typedef char __cdecl next(s_tag_field_ilterator* iter);
+			typedef char __cdecl next(s_tag_field_iterator* iter);
 			auto next_impl = reinterpret_cast<next*>(SwitchAddessByMode(0x52DAD0, 0u, 0u));
 			CHECK_FUNCTION_SUPPORT(next_impl);
 			return next_impl(this);
 		}
 	};
-	CHECK_STRUCT_SIZE(s_tag_field_ilterator, 0xB8);
+	CHECK_STRUCT_SIZE(s_tag_field_iterator, 0xB8);
 
 
 	/* Get tag_def for tag_group */

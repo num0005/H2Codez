@@ -1,20 +1,28 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H2Codez", "H2Codez\H2Codez.vcxproj", "{F0CF7B03-055F-4A48-938D-582CE22D1F27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+		DebugAddressSan|Win32 = DebugAddressSan|Win32
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{F0CF7B03-055F-4A48-938D-582CE22D1F27}.Debug|Win32.ActiveCfg = Debug|Win32
 		{F0CF7B03-055F-4A48-938D-582CE22D1F27}.Debug|Win32.Build.0 = Debug|Win32
+		{F0CF7B03-055F-4A48-938D-582CE22D1F27}.DebugAddressSan|Win32.ActiveCfg = DebugAddressSan|Win32
+		{F0CF7B03-055F-4A48-938D-582CE22D1F27}.DebugAddressSan|Win32.Build.0 = DebugAddressSan|Win32
 		{F0CF7B03-055F-4A48-938D-582CE22D1F27}.Release|Win32.ActiveCfg = Release|Win32
 		{F0CF7B03-055F-4A48-938D-582CE22D1F27}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9A673900-B5C1-4518-9956-0016ABCCBB44}
 	EndGlobalSection
 EndGlobal
