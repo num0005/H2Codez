@@ -179,7 +179,7 @@ struct byte_ref
 	inline void *operator[](size_t index)
 	{
 		ASSERT_CHECK(this->is_valid());
-		if (LOG_CHECK(index > INT_MAX) || this->is_empty() || this->size < (int)index)
+		if (!LOG_CHECK(index <= INT_MAX) || this->is_empty() || this->size < (int)index)
 			return nullptr;
 		char *data = reinterpret_cast<char*>(this->get_data());
 		return &data[index];
