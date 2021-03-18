@@ -68,7 +68,7 @@ struct blam_tag
 {
 	union {
 		char c_data[4];
-		uint32_t i_data ;
+		uint32_t i_data;
 	};
 
 	blam_tag()
@@ -78,6 +78,15 @@ struct blam_tag
 	constexpr blam_tag(uint32_t data) :
 		i_data(data)
 	{
+	}
+
+	blam_tag(const std::string& data) {
+		if (data.size() != 4)
+			throw std::runtime_error("blam_tag must be 4 characters long!");
+		c_data[3] = data.at(0);
+		c_data[2] = data.at(1);
+		c_data[1] = data.at(2);
+		c_data[0] = data.at(3);
 	}
 
 	inline std::string as_string() const
@@ -297,6 +306,10 @@ struct real_point2d
 {
 	float x;
 	float y;
+
+	real_point2d operator+(const real_point2d& other) const {
+		return real_point2d{ this->x + other.x, this->y + other.y };
+	}
 };
 CHECK_STRUCT_SIZE(real_point2d, 4 * 2);
 
@@ -448,6 +461,14 @@ struct string_id
 		value(id | (length << 24))
 	{
 	};
+
+	string_id(const char* name) {
+		*this = get_string_id(name);
+	}
+
+	string_id(const std::string &name) {
+		*this = get_string_id(name);
+	}
 
 	constexpr uint8_t get_length() const
 	{

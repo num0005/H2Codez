@@ -64,6 +64,9 @@
     <Filter Include="Source Files\Lua">
       <UniqueIdentifier>{a960cc7d-1915-409a-b929-f8e2aa3af130}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\ThirdParty">
+      <UniqueIdentifier>{c6339163-20aa-4d6f-a0c7-10a2b989d0d3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="H2Tool\H2Tool_extra_commands.inl">
@@ -374,6 +377,9 @@
     <ClInclude Include="H2Tool\LuaCommand.h">
       <Filter>Source Files\Patches\H2Tool</Filter>
     </ClInclude>
+    <ClInclude Include="Lua\BlamTypes.h">
+      <Filter>Source Files\Lua</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -513,6 +519,9 @@
     </ClCompile>
     <ClCompile Include="H2Tool\LuaCommand.cpp">
       <Filter>Source Files\Patches\H2Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\lfs\lfs.c">
+      <Filter>Source Files\ThirdParty</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

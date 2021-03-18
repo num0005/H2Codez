@@ -231,6 +231,7 @@
     <ClInclude Include="HaloScript\hs_global_descriptions.h" />
     <ClInclude Include="HaloScript\hs_syntax_node.h" />
     <ClInclude Include="Lua\API.h" />
+    <ClInclude Include="Lua\BlamTypes.h" />
     <ClInclude Include="Lua\TagAPI.h" />
     <ClInclude Include="Resources\sapien_accelerators.h" />
     <ClInclude Include="Tags\Bitmap.h" />
@@ -289,6 +290,7 @@
     <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\ThirdParty\lfs\lfs.c" />
     <ClCompile Include="COLLADA\COLLADA.cpp" />
     <ClCompile Include="Common\AssemblyLayoutGenerator.cpp" />
     <ClCompile Include="Common\Cache.cpp" />

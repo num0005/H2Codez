@@ -52,9 +52,9 @@ static const s_tool_command* h2tool_extra_commands[] = {
 	&edit_bitmap,
 	&structure_dump,
 	&lightmap_uv_import,
-	#ifdef _DEBUG
+	//#ifdef _DEBUG
 	&lua_script_command
-	#endif
+	//#endif
 };
 
 int __cdecl s_tool_command_compare(void *, const void* lhs, const void* rhs)
